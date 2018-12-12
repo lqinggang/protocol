@@ -31,7 +31,7 @@
 #define TAIL 0x55
 #define CMD 0x04
 #define REPORT 2
-#define HEAERBEAR  1
+#define HEARTBEAT  1
 
 #define version(num) (0x00 | (num << 4))
 #define MAXLENGTH 2048

@@ -80,9 +80,6 @@ int main(int argc,char *argv[])
 					size_t n;
 					char buf[MAXLINE];
 					while((n = precv(accfd, buf, MAXLINE, 0)) > 0) {
-				//		char data[n + 1];	
-				//		printf("receive length: %d\n", n);
-				//		int type = resolve(data, buf, &n);
 						fprintf(stdout ,"recv: %s", buf);
 					} //end recv
 					if(errno != EINTR) {
