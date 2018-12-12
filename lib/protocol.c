@@ -48,7 +48,7 @@ int resolve(char* dstptr, const byte *rscptr, size_t *len);
  */
 unsigned char *generadata(int dcmd, const void *msg, unsigned char *data, size_t *length)
 {
-	if(dcmd != REPORT && dcmd != HEAERBEAR) {
+	if(dcmd != REPORT && dcmd != HEARTBEAT) {
 		errno = EINVAL;
 		return NULL;
 	}
@@ -65,8 +65,8 @@ unsigned char *generadata(int dcmd, const void *msg, unsigned char *data, size_t
 		*(interac.data) = REPORT; 
 		data = report(interac, sendmsg, data, length);
 		break;
-	case HEAERBEAR:
-		*(interac.data) = HEAERBEAR; 
+	case HEARTBEAT:
+		*(interac.data) = HEARTBEAT; 
 		data = heartbeat(interac, data, length);
 		break;
 	}
@@ -163,7 +163,7 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
  */
 ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 {
-	if(dcmd != REPORT && dcmd != HEAERBEAR) {
+	if(dcmd != REPORT && dcmd != HEARTBEAT) {
 		errno = EINVAL;
 		perror("unknow type");
 		return -1;
@@ -172,18 +172,20 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	char *data;
 	if(dcmd == REPORT) {
 		data = (char *)malloc(sizeof(char *) * strlen((char *)buf) * 2);
-		if(data == NULL) {
-			printf("psend error:no enough space\n");
-			return -1;
-		}
-		bzero(data,sizeof(data));
+	} else {
+		data = (char *)malloc(sizeof(char *) * 10);
 	}
+
+	if(data == NULL) {
+		printf("psend error:no enough space\n");
+		return -1;
+	}
+	bzero(data,sizeof(data));
+
 	generadata(dcmd, buf, data, &length);
 	ssize_t n;
 	n = Send(sockfd, data, length, 0);
-	if(dcmd == REPORT) {
-		free(data);
-	}
+	free(data);
 	return (n);
 }
 
@@ -191,7 +193,6 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 {
 	char recbuff[len * 2];
 	size_t n;
-	int type;
 	if((n = recv(sockfd, recbuff, len, flags)) < 0) {
 		perror("recv error");
 		return (errno);
@@ -199,17 +200,19 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 
 	char data[len];
 	if(n > 0) {
+		int type;
 		type = resolve(data, recbuff, &n);
 		if(type == REPORT) {
 			strncpy(buf, data, n);
+			fflush(NULL);
 			return (n);
-		} else {
-			psend(HEAERBEAR, sockfd, buf, len, flags);
-		}
+		} 
+	//	else {
+	//		psend(HEARTBEAT, sockfd, buf, len, flags);
+	//	}
 	} else {
 		return (0);
 	}
-
 }
 
 int resolve(char *dstptr, const byte *rscptr, size_t *len)
@@ -238,7 +241,7 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 		*len = length - 3;
 		*(dstptr) = '\0';
 		break;
-	case HEAERBEAR:
+	case HEARTBEAT:
 		for(i = 0; i< *len; i++) {
 			*(dstptr++) = *(rscptr + 5 + i);
 		}
