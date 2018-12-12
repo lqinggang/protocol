@@ -32,45 +32,16 @@ int main(int argc,char *argv[])
 
 	Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
-//	char *data = (char *) malloc(sizeof(char) * 100);
-//	size_t length;
-
-	//bzero(data,sizeof(data));
-	//
-	//	*data =  0xAA;
-	//	*(data + 1) = 0;
-	//	*(data + 2) = 0x06;
-	//	*(data + 3) = 0;
-	//	*(data + 4) = 0x04;
-	//	*(data + 5) = 0x02;
-	//	*(data + 6) = 'Y';
-	//	*(data + 7) = 'e';
-	//	*(data + 8) = 's';
-	//	char *crc = (char *) malloc(sizeof(char) * 100);;
-	//	int i;
-	//	for(i = 0; i < 7; i++) {
-	//		*(crc + i) = *(data + 1 + i);
-	//	}
-	//	*(data + 9) = cal_crc8_table(crc,7);
-	//	*(data + 10) = 0x55;
-	//	*length = 11;
-
-
-	char *msg = "send to server";
-//	if(argc >= 2) {
-//		strcpy(msg, argv[1]);
-//	}
-//	generadata(REPORT, msg, data, &length);
-//	Send(sockfd, data, length, 0);
-//	bzero(data,sizeof(data));
-//	generadata(HEAERBEAR, "send to server", data, &length);
-//  Send(sockfd, data, length, 0);
-//  Send(sockfd, msg, strlen(msg), 0);
-
-	size_t length = strlen(msg);
-	psend(sockfd, msg, length, 0);
+	char msg[MAXLINE];
+	size_t n;
+	printf("%% ");
+	while(fgets(msg, MAXLINE, stdin) != NULL) {
+		size_t length = strlen(msg);
+		psend(REPORT, sockfd, msg, length - 1, 0); //-1: not included \n
+		printf("%% ");
+		fflush(NULL);
+	}
 	close(sockfd);
 
-//	free(data);
 	exit(0);
 }
