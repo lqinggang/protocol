@@ -17,7 +17,7 @@
 #include <arpa/inet.h>
 
 #define ServAddr "192.168.10.253" 
-#define ServPort 12345 
+#define ServPort 12345
 #define MAXLINE 1024
 #define BACKLOG  16
 
