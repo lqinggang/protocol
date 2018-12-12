@@ -8,9 +8,11 @@ Build:
 run the following command in the root directory:
 ```c
 make
+```
 clean up please use:
 ```c
 make clean
+```
 
 Note:
 ---
