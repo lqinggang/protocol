@@ -1,5 +1,4 @@
 protocol
-<<<<<<< HEAD
 ====
 research and implementation of socket-based
 custom protocol.
