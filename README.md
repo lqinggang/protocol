@@ -1,4 +1,5 @@
 protocol
+<<<<<<< HEAD
 ====
 research and implementation of socket-based
 custom protocol.
@@ -11,6 +12,11 @@ make
 clean up please use:
 ```c
 make clean
+=======
+###
+Research and implementation of Socket-based
+Custom Protocol.
+>>>>>>> ad67f8dff13d28586a11c35de3ec96678e6e0f00
 
 
 Note:
