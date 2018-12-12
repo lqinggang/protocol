@@ -42,6 +42,7 @@ int main(int argc,char *argv[])
 		int accfd;
 		struct sockaddr addr;
 		socklen_t addrlen;
+		printf("wait for client....\n");
 		if((accfd = Accept(listenfd, (struct sockaddr *)&addr, &addrlen)) < 0) { 
 			if(errno == EINTR)
 				continue;
@@ -78,11 +79,11 @@ int main(int argc,char *argv[])
 					sleep(1);
 					size_t n;
 					char buf[MAXLINE];
-					while((n = recv(accfd, buf, MAXLINE, 0)) > 0) {
-						char data[n + 1];	
-						printf("receive length: %d\n", n);
-						int type = resolve(data, buf, &n);
-						fprintf(stdout ,"type: %d, recv: %s\n", type, data);
+					while((n = precv(accfd, buf, MAXLINE, 0)) > 0) {
+				//		char data[n + 1];	
+				//		printf("receive length: %d\n", n);
+				//		int type = resolve(data, buf, &n);
+						fprintf(stdout ,"recv: %s", buf);
 					} //end recv
 					if(errno != EINTR) {
 						printf("disconnect by %s:%d\n",
