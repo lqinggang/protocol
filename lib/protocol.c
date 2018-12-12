@@ -18,13 +18,14 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
  * data: save the generated data
  * length: length of data, and return the number of bytes filled.
  */
-unsigned char *generadata(int dcmd, const unsigned char* msg, unsigned char *data, size_t *length)
+unsigned char *generadata(int dcmd, const void *msg, unsigned char *data, size_t *length)
 {
 	if(dcmd != REPORT && dcmd != HEAERBEAR) {
 		errno = EINVAL;
 		return NULL;
 	}
 
+	unsigned char *sendmsg = (unsigned char *)msg;
 	struct interaction interac;
 	interac.header = HEADER;
 	interac.option = version(0);
@@ -34,7 +35,7 @@ unsigned char *generadata(int dcmd, const unsigned char* msg, unsigned char *dat
 	switch(dcmd) {
 	case REPORT:
 		*(interac.data) = REPORT; 
-		data = report(interac, msg, data, length);
+		data = report(interac, sendmsg, data, length);
 		break;
 	case HEAERBEAR:
 		*(interac.data) = HEAERBEAR; 
@@ -129,12 +130,31 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
 	return data;
 }
 
+/*
+ * send msg to server
+ */
+ssize_t psend(int sockfd, const char *buf, size_t len, int flags)
+{
+	size_t length;
+	char *data = (char *)malloc(sizeof(char *) * strlen(buf) * 2);
+	if(data == NULL) {
+		printf("psend error:no enough space\n");
+		return -1;
+	}
+	bzero(data,sizeof(data));
+	generadata(REPORT, buf, data, &length);
+	ssize_t n;
+	n = Send(sockfd, data, length, 0);
+	free(data);
+	return (n);
+}
+
 
 int resolve(char *dstptr, const char *rscptr, size_t *len)
 {
-	if(dstptr == NULL || rscptr == NULL ) {
-//|| *rscptr != 0xAA || *(rscptr + *len - 1) != 0x55
-		printf("error\n");
+	if(dstptr == NULL || rscptr == NULL || *rscptr != HEADER || *(rscptr + *len - 1) != 0x55) {
+		errno = EINVAL;
+		perror("resolve error");
 		return -1;
 	}
 	byte rlen[2];
@@ -146,7 +166,6 @@ int resolve(char *dstptr, const char *rscptr, size_t *len)
 	byte option = *(rscptr + 3);
 	byte cmd = *(rscptr + 4);
 	byte crc = *(rscptr + *len - 2);
-//	byte crc = *(rscptr + 20);
 
 	int i;
 	switch(*(rscptr + 5)) {

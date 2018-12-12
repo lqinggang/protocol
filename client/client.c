@@ -32,10 +32,10 @@ int main(int argc,char *argv[])
 
 	Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
-	char *data = (char *) malloc(sizeof(char) * 100);
-	size_t length;
+//	char *data = (char *) malloc(sizeof(char) * 100);
+//	size_t length;
 
-	bzero(data,sizeof(data));
+	//bzero(data,sizeof(data));
 	//
 	//	*data =  0xAA;
 	//	*(data + 1) = 0;
@@ -56,17 +56,21 @@ int main(int argc,char *argv[])
 	//	*length = 11;
 
 
-	char *msg = " send to server           ";
+	char *msg = "send to server";
 //	if(argc >= 2) {
 //		strcpy(msg, argv[1]);
 //	}
-	generadata(REPORT, msg, data, &length);
+//	generadata(REPORT, msg, data, &length);
 //	Send(sockfd, data, length, 0);
 //	bzero(data,sizeof(data));
 //	generadata(HEAERBEAR, "send to server", data, &length);
-	Send(sockfd, data, length, 0);
+//  Send(sockfd, data, length, 0);
 //  Send(sockfd, msg, strlen(msg), 0);
+
+	size_t length = strlen(msg);
+	psend(sockfd, msg, length, 0);
 	close(sockfd);
-	free(data);
+
+//	free(data);
 	exit(0);
 }
