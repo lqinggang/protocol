@@ -41,12 +41,12 @@ typedef unsigned char byte;
 struct interaction {
 	byte header; // == 0xAA
 	byte length[2]; //length of (option + cmd + data)
-	byte option; 
-	byte cmd; 
+	byte option;   
+	byte cmd;  //== CMD
 	char data[MAXLENGTH];
 	byte crc;
 	byte tail; // == 0x55
-	byte dcmd;
+	byte dcmd; //0x01: HEARTBEAT; 0x02:REPORT
 };
 
 

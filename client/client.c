@@ -36,9 +36,9 @@ int main(int argc,char *argv[])
 
 	//2. initialize the server address
 	struct sockaddr_in servaddr;
-	bzero(&servaddr, sizeof(servaddr));
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_port = htons(ServPort);
+	bzero(&servaddr, sizeof(servaddr)); //clear
+	servaddr.sin_family = AF_INET;//ipv4
+	servaddr.sin_port = htons(ServPort); 
 	servaddr.sin_addr.s_addr = inet_addr(ServAddr);
 
 	//3. connect to the server
@@ -46,7 +46,7 @@ int main(int argc,char *argv[])
 
 	//4. get message from stdin
 	char msg[MAXLINE];
-	printf("%% "); //prompt
+	printf("%% "); //prompt: %
 	while(fgets(msg, MAXLINE, stdin) != NULL) {  
 		size_t length = strlen(msg);
 		//5. send the message to the server
