@@ -171,18 +171,18 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	size_t length;
 	char *data;
 	if(dcmd == REPORT) {
-	data = (char *)malloc(sizeof(char *) * strlen((char *)buf) * 2);
-	if(data == NULL) {
-		printf("psend error:no enough space\n");
-		return -1;
-	}
-	bzero(data,sizeof(data));
+		data = (char *)malloc(sizeof(char *) * strlen((char *)buf) * 2);
+		if(data == NULL) {
+			printf("psend error:no enough space\n");
+			return -1;
+		}
+		bzero(data,sizeof(data));
 	}
 	generadata(dcmd, buf, data, &length);
 	ssize_t n;
 	n = Send(sockfd, data, length, 0);
 	if(dcmd == REPORT) {
-	free(data);
+		free(data);
 	}
 	return (n);
 }
@@ -199,17 +199,17 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 
 	char data[len];
 	if(n > 0) {
-	type = resolve(data, recbuff, &n);
-	if(type == REPORT) {
-		strncpy(buf, data, n);
-		return (n);
+		type = resolve(data, recbuff, &n);
+		if(type == REPORT) {
+			strncpy(buf, data, n);
+			return (n);
+		} else {
+			psend(HEAERBEAR, sockfd, buf, len, flags);
+		}
 	} else {
-		psend(HEAERBEAR, sockfd, buf, len, flags);
+		return (0);
 	}
-	} else {
-	return (0);
-	}
-	
+
 }
 
 int resolve(char *dstptr, const byte *rscptr, size_t *len)
@@ -242,7 +242,7 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 		for(i = 0; i< *len; i++) {
 			*(dstptr++) = *(rscptr + 5 + i);
 		}
-//		memcpy(dstptr, rscptr, *len);
+		//		memcpy(dstptr, rscptr, *len);
 		break;
 	default:
 		printf("unknow type\n");
