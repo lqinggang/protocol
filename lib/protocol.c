@@ -95,12 +95,11 @@ static unsigned char *heartbeat(struct interaction interac,unsigned char *data, 
 static unsigned char *report(struct interaction interac, const unsigned char *msg, unsigned char *data, size_t *length)
 {
 	int i;
-	int len = strlen(msg);
+	int len = *length;
 	for(i = 0; i < len; i++) {
 		*(interac.data + 1 + i) =*(msg++);
 	}
 	*(interac.data + len + 1) = '\0';
-	//	memcpy(interac.data + 1, msg, strlen(msg));
 
 	unsigned int n = strlen(interac.data) + 2; //+2:option, cmd
 	interac.length[0] = (n >> (sizeof(byte) * 8) & 0xFF);
@@ -168,10 +167,9 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 		perror("unknow type");
 		return -1;
 	}
-	size_t length;
 	char *data;
 	if(dcmd == REPORT) {
-		data = (char *)malloc(sizeof(char *) * strlen((char *)buf) * 2);
+		data = (char *)malloc(sizeof(char *) * len * 2);
 	} else {
 		data = (char *)malloc(sizeof(char *) * 10);
 	}
@@ -182,6 +180,7 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	}
 	bzero(data,sizeof(data));
 
+	size_t length = len;
 	generadata(dcmd, buf, data, &length);
 	ssize_t n;
 	n = Send(sockfd, data, length, 0);
@@ -191,6 +190,7 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 
 ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 {
+	bzero(buf, sizeof(buf));
 	char recbuff[len * 2];
 	size_t n;
 	if((n = recv(sockfd, recbuff, len, flags)) < 0) {
@@ -204,12 +204,12 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 		type = resolve(data, recbuff, &n);
 		if(type == REPORT) {
 			strncpy(buf, data, n);
-			fflush(NULL);
 			return (n);
 		} 
 	//	else {
 	//		psend(HEARTBEAT, sockfd, buf, len, flags);
 	//	}
+	//	fflush(NULL);
 	} else {
 		return (0);
 	}
@@ -245,7 +245,8 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 		for(i = 0; i< *len; i++) {
 			*(dstptr++) = *(rscptr + 5 + i);
 		}
-		//		memcpy(dstptr, rscptr, *len);
+		*len = length - 3;
+		*(dstptr) = '\0';
 		break;
 	default:
 		printf("unknow type\n");

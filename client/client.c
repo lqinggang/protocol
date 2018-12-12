@@ -62,6 +62,5 @@ int main(int argc,char *argv[])
 static void sig_alrm(int signo)
 {
 	psend(HEARTBEAT, sockfd, NULL, 0, 0); //send heartbeat package
-	printf("sig_alrm\n");
 	alarm(ALRMTIME);
 }

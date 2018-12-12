@@ -80,7 +80,8 @@ int main(int argc,char *argv[])
 					size_t n;
 					char buf[MAXLINE];
 					while((n = precv(accfd, buf, MAXLINE, 0)) > 0) {
-						fprintf(stdout ,"recv: %s", buf);
+						fprintf(stdout ,"recv: %s\n", buf);
+						fflush(NULL);
 					} //end recv
 					if(errno != EINTR) {
 						printf("disconnect by %s:%d\n",
