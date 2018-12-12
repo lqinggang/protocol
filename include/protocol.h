@@ -49,11 +49,11 @@ struct interaction {
 	byte dcmd;
 };
 
-unsigned char *generadata(int dcmd, const void *msg, unsigned char *data, size_t *length);
 
-ssize_t psend(int sockfd, const char *buf, size_t len, int flags);
+ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags);
 
-int resolve(char* dstptr, const char *rscptr, size_t *len);
+ssize_t precv(int sockfd, void *buf, size_t len, int flags);
+
 
 
 #endif

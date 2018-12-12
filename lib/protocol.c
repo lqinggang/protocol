@@ -7,10 +7,38 @@
 
 #include "protocol.h"
 
+/*
+ * generate data that needs to be send
+ */
+static unsigned char *generadata(int dcmd, const void *msg, unsigned char *data, size_t *length);
+
+/*
+ * generate heartbeat package
+ */
 static unsigned char *heartbeat(struct interaction interac, unsigned char *data, size_t *length);
+
+/*
+ * generate date message
+ */
 static unsigned char *report(struct interaction interac, const unsigned char *msg, unsigned char *data, size_t *length);
+
+/*
+ * calculate the crc value of  (length, option, cmd and data)
+ */
 static unsigned char cal_crc(struct interaction interac);
+
+/*
+ * generate protocol package
+ */
 static unsigned char *getdata(struct interaction interac, unsigned char *data, size_t *length);
+
+/*
+ * resolve data of receive the message
+ */
+int resolve(char* dstptr, const byte *rscptr, size_t *len);
+
+
+
 
 /*
  * dcmd: the data command type
@@ -133,24 +161,58 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
 /*
  * send msg to server
  */
-ssize_t psend(int sockfd, const char *buf, size_t len, int flags)
+ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 {
+	if(dcmd != REPORT && dcmd != HEAERBEAR) {
+		errno = EINVAL;
+		perror("unknow type");
+		return -1;
+	}
 	size_t length;
-	char *data = (char *)malloc(sizeof(char *) * strlen(buf) * 2);
+	char *data;
+	if(dcmd == REPORT) {
+	data = (char *)malloc(sizeof(char *) * strlen((char *)buf) * 2);
 	if(data == NULL) {
 		printf("psend error:no enough space\n");
 		return -1;
 	}
 	bzero(data,sizeof(data));
-	generadata(REPORT, buf, data, &length);
+	}
+	generadata(dcmd, buf, data, &length);
 	ssize_t n;
 	n = Send(sockfd, data, length, 0);
+	if(dcmd == REPORT) {
 	free(data);
+	}
 	return (n);
 }
 
+ssize_t precv(int sockfd, void *buf, size_t len, int flags)
+{
+	char recbuff[len * 2];
+	size_t n;
+	int type;
+	if((n = recv(sockfd, recbuff, len, flags)) < 0) {
+		perror("recv error");
+		return (errno);
+	}
 
-int resolve(char *dstptr, const char *rscptr, size_t *len)
+	char data[len];
+	if(n > 0) {
+	type = resolve(data, recbuff, &n);
+	if(type == REPORT) {
+		strncpy(buf, data, n);
+		return (n);
+	} else {
+		psend(HEAERBEAR, sockfd, buf, len, flags);
+	}
+	} else {
+	return (0);
+	}
+	
+}
+
+int resolve(char *dstptr, const byte *rscptr, size_t *len)
 {
 	if(dstptr == NULL || rscptr == NULL || *rscptr != HEADER || *(rscptr + *len - 1) != 0x55) {
 		errno = EINVAL;
