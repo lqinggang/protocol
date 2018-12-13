@@ -235,7 +235,10 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 {
 	bzero(buf, sizeof(buf)); //clear
+
 	char recbuff[len * 2];
+	bzero(recbuff, len * 2);
+
 	size_t n;
 	if((n = recv(sockfd, recbuff, len, flags)) < 0) { // received data 
 		perror("recv error");
@@ -243,19 +246,23 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 	}
 
 	char data[len];
+	bzero(data, len); //clear
 	if(n > 0) {
 		int type;
 		type = resolve(data, recbuff, &n); //resolve the message
 		if(type == REPORT) {
 			strncpy(buf, data, n);
 			return (n);
-		} else {
+		} else if(type == HEARTBEAT) {
 
 			/*
 			 * when receiving a heartbeat packet, turn around
 			 */
 			psend(HEARTBEAT, sockfd, buf, len, flags);
+		} else {
+			return -1;	
 		}
+
 		fflush(NULL);
 	} else {
 		return (0);
@@ -264,6 +271,7 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 
 int resolve(char *dstptr, const byte *rscptr, size_t *len)
 {
+	bzero(dstptr, sizeof(dstptr));
 	if(dstptr == NULL || rscptr == NULL || *rscptr != HEADER || *(rscptr + *len - 1) != 0x55) {
 		errno = EINVAL;
 		perror("resolve error");
@@ -291,8 +299,20 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 	byte cmd = *(rscptr + 4);
 	byte crc = *(rscptr + *len - 2);
 
+	char rescptr[*len + 1];
+	bzero(rescptr, *len + 1);
+
+	size_t reslength = *len - 2;
+	reescape(rscptr + 1, rescptr, &reslength);
+	if(cal_crc8_table(rescptr, reslength - 1) != (byte)*(rescptr + reslength - 1)) {
+		fprintf(stderr,"data error\n");
+		return (-1);
+	}
+	
+	
 	int i;
-	switch(*(rscptr + 5)) { // *(rscptr + 5)  is the dcmd
+	//switch(*(rscptr + 5)) { // *(rscptr + 5)  is the dcmd
+	switch(*(rescptr + 4)) { // *(rscptr + 5)  is the dcmd
 	case REPORT:
 
 		/*
@@ -307,13 +327,15 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 			 *		 dstptr++;
 			 *		 *dstptr = *(rscptr + 6 + i);
 			 */
-			*(dstptr++) = *(rscptr + 6 + i);
+			// *(dstptr++) = *(rscptr + 6 + i);
+			 *(dstptr++) = *(rescptr + 5 + i);
 		}
 		break;
 	case HEARTBEAT:
-		for(i = 0; i< *len; i++) {
-			*(dstptr++) = *(rscptr + 5 + i);
-		}
+	//	for(i = 0; i< *len; i++) {
+	//		//*(dstptr++) = *(rscptr + 5 + i);
+	//		*(dstptr++) = *(rescptr + 4 + i);
+	//	}
 		break;
 	default:
 		printf("unknow type\n");

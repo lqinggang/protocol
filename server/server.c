@@ -72,14 +72,14 @@ int main(int argc,char *argv[])
 				return -1;
 			} else if(pid == 0) { //child
 
-			//	pid_t pid2;
-			//	if((pid2 = fork()) < 0) {
-			//		perror("fork error: ");
-			//		close(listenfd);
-			//		close(accfd);
-			//		return -1;
-			//	} else if(pid2 == 0) { // second child
-			//		sleep(1);
+				pid_t pid2;
+				if((pid2 = fork()) < 0) {
+					perror("fork error: ");
+					close(listenfd);
+					close(accfd);
+					return -1;
+				} else if(pid2 == 0) { // second child
+					sleep(1);
 
 					//7. receive messsage 
 					size_t n;
@@ -87,6 +87,7 @@ int main(int argc,char *argv[])
 					while((n = precv(accfd, buf, MAXLINE, 0)) > 0) {
 						fprintf(stdout ,"recv: %s\n", buf);
 						fflush(NULL);
+						bzero(buf, MAXLINE);
 					} //end recv
 					if(errno != EINTR) {
 						printf("disconnect by %s:%d\n",
@@ -95,14 +96,14 @@ int main(int argc,char *argv[])
 						close(accfd);
 						exit(1);
 					}
-			//	} else { //first child 
-			//		
-			//		/*
-			//		 * make the parent process of the second
-			//		 * second child process into init process
-			//		 */
-			//		exit(0); 
-			//	}
+				} else { //first child 
+					
+					/*
+					 * make the parent process of the second
+					 * second child process into init process
+					 */
+					exit(0); 
+				}
 
 			} else { //parent
 
