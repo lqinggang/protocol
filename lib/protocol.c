@@ -259,7 +259,7 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 	if(n > 0) {
 		int type;
 		type = resolve(data, recbuff, &n); //resolve the message
-		if(type == REPORT) {
+		if(type == REPORT && n > 0) {
 			strncpy(buf, data, n);
 			return (n);
 		} else if(type == HEARTBEAT) {
