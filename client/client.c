@@ -50,7 +50,7 @@ int main(int argc,char *argv[])
 	while(fgets(msg, MAXLINE, stdin) != NULL) {  
 		size_t length = strlen(msg);
 		//5. send the message to the server
-		psend(REPORT, sockfd, msg, length - 1, 0); //-1: not included \n
+		psend(REPORT, sockfd, msg, length , 0);
 		printf("%% ");
 		fflush(NULL);
 	}

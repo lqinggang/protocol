@@ -194,6 +194,13 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
  */
 ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 {
+	/*
+	 * not send when the length is less than 
+	 * or equal to 0
+	 */
+	if(--len <= 0)   //-1: not included \n
+		return 0; 
+	
 	/* wrong data segment command type */
 	if(dcmd != REPORT && dcmd != HEARTBEAT) {
 		errno = EINVAL;
