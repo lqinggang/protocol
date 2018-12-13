@@ -125,6 +125,7 @@ static unsigned char cal_crc(struct interaction interac)
 {
 	int dlen = strlen(interac.data);
 	unsigned char tocrc[ 4 + dlen];// +4: length[2] + optioon + cmd
+	bzero(tocrc, sizeof(tocrc));
 	tocrc[0] = interac.length[0];
 	tocrc[1] = interac.length[1];
 	tocrc[2] = interac.option;
@@ -147,6 +148,7 @@ static unsigned char cal_crc(struct interaction interac)
 static unsigned char *getdata(struct interaction interac, unsigned char *data, size_t *length)
 {
 	unsigned char rsc[strlen(interac.data) + 6]; //+6: length[2] + option + cmd + crc
+	bzero(rsc, sizeof(rsc));
 	rsc[0] = interac.length[0];
 	rsc[1] = interac.length[1];
 	rsc[2] = interac.option;
@@ -219,7 +221,7 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	 *is passed back through length.
 	 */
 	generadata(dcmd, buf, data, &length); 
-	ssize_t n;
+	ssize_t n = 0;
 	n = Send(sockfd, data, length, 0); //send the message 
 	free(data);
 	return (n);
@@ -239,7 +241,7 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 	char recbuff[len * 2];
 	bzero(recbuff, len * 2);
 
-	size_t n;
+	size_t n = 0;
 	if((n = recv(sockfd, recbuff, len, flags)) < 0) { // received data 
 		perror("recv error");
 		return (errno);
@@ -308,16 +310,15 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 		fprintf(stderr,"data error\n");
 		return (-1);
 	}
-	
-	
+
+
 	int i;
-	//switch(*(rscptr + 5)) { // *(rscptr + 5)  is the dcmd
-	switch(*(rescptr + 4)) { // *(rscptr + 5)  is the dcmd
+	switch(*(rescptr + 4)) { // *(rescptr + 4)  is the dcmd
 	case REPORT:
 
 		/*
 		 * -3:  option + cmd + dcmd
-		 * +6: header + length[2] + option + cmd + dcmd
+		 * +5: length[2] + option + cmd + dcmd
 		 */
 		for(i = 0; i< length - 3; i++) { 
 
@@ -325,17 +326,15 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 			 *		 *(dstptr++) 
 			 * equivalent to:
 			 *		 dstptr++;
-			 *		 *dstptr = *(rscptr + 6 + i);
+			 *		 *dstptr = *(resptr + 5 + i);
 			 */
-			// *(dstptr++) = *(rscptr + 6 + i);
-			 *(dstptr++) = *(rescptr + 5 + i);
+			*(dstptr++) = *(rescptr + 5 + i);
 		}
 		break;
 	case HEARTBEAT:
-	//	for(i = 0; i< *len; i++) {
-	//		//*(dstptr++) = *(rscptr + 5 + i);
-	//		*(dstptr++) = *(rescptr + 4 + i);
-	//	}
+		for(i = 0; i< *len; i++) {
+			*(dstptr++) = *(rescptr + 4 + i);
+		}
 		break;
 	default:
 		printf("unknow type\n");
@@ -345,6 +344,3 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 	*(dstptr) = '\0';
 	return (*(rscptr + 5));
 }
-
-
-
