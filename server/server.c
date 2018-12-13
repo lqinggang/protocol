@@ -8,8 +8,8 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include "wrapsock.h"
 #include <signal.h>
+#include "wrapsock.h"
 
 static void sig_chld(int signo)
 {
@@ -72,10 +72,14 @@ int main(int argc,char *argv[])
 				return -1;
 			} else if(pid == 0) { //child
 
+				/*
+				 * only keep the listenfd of the parent process
+				 */
+				close(listenfd); 
+
 				pid_t pid2;
 				if((pid2 = fork()) < 0) {
 					perror("fork error: ");
-					close(listenfd);
 					close(accfd);
 					return -1;
 				} else if(pid2 == 0) { // second child
@@ -97,7 +101,12 @@ int main(int argc,char *argv[])
 						exit(1);
 					}
 				} else { //first child 
-					
+
+					/*
+					 * only keep the listenfd of the parent process
+					 */
+					close(accfd);
+
 					/*
 					 * make the parent process of the second
 					 * second child process into init process
