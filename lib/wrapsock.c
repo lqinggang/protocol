@@ -50,6 +50,16 @@ ssize_t Send(int sockfd, const void *ptr, size_t len, int flags)
 	return n;
 }
 
+ssize_t Write(int sockfd, const void *ptr, size_t len) 
+{
+	ssize_t n;
+	if((n = write(sockfd, ptr, len)) < 0) {
+		perror("send error");
+	}
+	return n;
+}
+
+
 int Listen(int sockfd, int backlog)
 {
 	if(listen(sockfd, backlog) < 0) {

@@ -26,6 +26,7 @@ int Socket(int domain, int type, int protocol);
 void Inet_pton(int domain, const char *ptr, void *addrptr);
 void Connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen);
 ssize_t Send(int sockfd, const void *ptr, size_t len, int flags);
+ssize_t Write(int sockfd, const void *ptr, size_t len);
 
 int Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen);
 int Listen(int sockfd, int backlog);

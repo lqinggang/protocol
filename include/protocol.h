@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/select.h>
 #include "crc.h"
 #include "escape.h"
 

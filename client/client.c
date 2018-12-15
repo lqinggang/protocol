@@ -20,6 +20,7 @@
 int sockfd; 
 
 static void sig_alrm(int signo);
+static void sig_pipe(int signo);
 
 
 int main(int argc,char *argv[])
@@ -27,6 +28,8 @@ int main(int argc,char *argv[])
 	//0. heartbeat package sent every 15 seconds 
 	signal(SIGALRM,sig_alrm);
 	alarm(ALRMTIME);
+	
+	signal(SIGPIPE,sig_pipe);
 
 	//1. create a socket
 	if((sockfd = Socket(AF_INET, SOCK_STREAM, 0)) == 0) { 
@@ -63,4 +66,10 @@ static void sig_alrm(int signo)
 {
 	psend(HEARTBEAT, sockfd, NULL, 0, 0); //send heartbeat package
 	alarm(ALRMTIME);
+}
+static void sig_pipe(int signo)
+{
+	fprintf(stderr, "the server has been disconnected\n");	
+	close(sockfd);
+	exit(0);
 }

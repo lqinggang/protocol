@@ -228,8 +228,26 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	 *is passed back through length.
 	 */
 	generadata(dcmd, buf, data, &length); 
+
+	int err;
+	int maxfdl;
+	fd_set wset;
+	struct timeval time;
+	time.tv_sec = 0; //not wait
+	time.tv_usec = 0;
+	FD_ZERO(&wset);
+	FD_SET(sockfd, &wset);
+	maxfdl = sockfd + 1;
+	if(select(maxfdl, NULL, &wset, NULL, &time) < 0) {
+		perror("select error");
+		err = errno;
+	}
 	ssize_t n = 0;
-	n = Send(sockfd, data, length, 0); //send the message 
+	if(FD_ISSET(sockfd, &wset)) {
+		n = Send(sockfd, data, length, 0); //send the message 
+	} else {
+		fprintf(stderr, strerror(err));
+	}
 	free(data);
 	return (n);
 }
