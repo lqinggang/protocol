@@ -63,6 +63,11 @@ int main(int argc,char *argv[])
 
 			}
 
+			/*
+			 * if fork() success, the parent and child process will wach have 
+			 * an accfd and listenfd, so we should close the listenfd socket 
+			 * of the child process, and the accfd socket of the parent process
+			 */
 			//6.create a process to receive data.
 			pid_t pid;
 			if((pid = fork()) < 0) {
@@ -77,6 +82,7 @@ int main(int argc,char *argv[])
 				 */
 				close(listenfd); 
 
+				/* that will be have two accfd socket,if success */
 				pid_t pid2;
 				if((pid2 = fork()) < 0) {
 					perror("fork error: ");
@@ -115,6 +121,11 @@ int main(int argc,char *argv[])
 				}
 
 			} else { //parent
+
+				/*
+				 * only keep the accfd of the first child process
+				 */
+				close(accfd); 
 
 				/* wait for child process
 				 * prevent zombie process
