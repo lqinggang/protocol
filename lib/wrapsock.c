@@ -71,6 +71,15 @@ int Listen(int sockfd, int backlog)
 
 int Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen)
 {
+	int on = 1;
+	if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
+		perror("bind error: setsockopt error");
+		if(close(sockfd ) < 0) {
+			perror("close error");
+		}
+		exit(-1);
+	}
+
 	if(bind(sockfd, addr, addrlen) < 0) {
 		perror("bind error: ");
 		return -1;
