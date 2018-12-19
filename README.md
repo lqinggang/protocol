@@ -5,12 +5,8 @@ custom protocol.
 
 Format:
 ---
- 0         7        15       23       31
- |---------|--------|--------|--------|
- |  header | [0] length [1]  | option |
- |---------|--------|--------|--------|
- |   cmd   |  data  |   crc  |  tail  |
- |---------|--------|--------|--------|
+![](https://github.com/Lqinggang/protocol/format.png)
+
 
 description:
 header: 0xAA
