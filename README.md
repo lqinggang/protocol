@@ -5,7 +5,7 @@ custom protocol.
 
 Format:
 ---
-![](https://github.com/Lqinggang/protocol/format.png)
+![](https://github.com/Lqinggang/protocol/blob/master/format.png)
 
 
 description:
