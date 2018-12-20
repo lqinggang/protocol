@@ -5,9 +5,9 @@ custom protocol.
 
 Format:
 ---
+
 ![](https://github.com/Lqinggang/protocol/blob/master/format.png)
-
-
+(stale) <br>
 description: <br>
 header: 0xAA <br>
 length: option (1 byte) + cmd (1 byte) + data (N byte) <br>

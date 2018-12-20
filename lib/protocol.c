@@ -126,9 +126,9 @@ static unsigned char cal_crc(struct interaction interac)
 	int dlen = strlen(interac.data);
 	unsigned char tocrc[ 4 + dlen];// +4: length[2] + optioon + cmd
 	bzero(tocrc, sizeof(tocrc));
-	tocrc[0] = interac.length[0];
-	tocrc[1] = interac.length[1];
-	tocrc[2] = interac.option;
+	tocrc[0] = interac.option;
+	tocrc[1] = interac.length[0];
+	tocrc[2] = interac.length[1];
 	tocrc[3] = interac.cmd;
 	int i;
 	//int len = strlen(interac.data); 
@@ -149,9 +149,9 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
 {
 	unsigned char rsc[strlen(interac.data) + 6]; //+6: length[2] + option + cmd + crc
 	bzero(rsc, sizeof(rsc));
-	rsc[0] = interac.length[0];
-	rsc[1] = interac.length[1];
-	rsc[2] = interac.option;
+	rsc[0] = interac.option;
+	rsc[1] = interac.length[0];
+	rsc[2] = interac.length[1];
 	rsc[3] = interac.cmd;
 
 	int i;
@@ -315,14 +315,14 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 	 *          |  data: N byte  |
 	 */
 	byte rlen[2];
-	rlen[0] = *(rscptr + 1); 
-	rlen[1] = *(rscptr + 2);
+	rlen[0] = *(rscptr + 2); 
+	rlen[1] = *(rscptr + 3);
 
 	int length = 0;
 	/* byte length[2] to  int length */
 	length |= ((rlen[0] << sizeof(byte) * 8) | rlen[1]);
 
-	byte option = *(rscptr + 3);
+	byte option = *(rscptr + 1);
 	byte cmd = *(rscptr + 4);
 	byte crc = *(rscptr + *len - 2);
 
