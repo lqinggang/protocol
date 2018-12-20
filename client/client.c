@@ -10,25 +10,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <pthread.h>
 #include "wrapsock.h"
 #include "crc.h"
 #include "escape.h"
 #include "protocol.h"
 
-#define ALRMTIME  30
-
-int sockfd; 
-
 static void sig_alrm(int signo);
 static void sig_pipe(int signo);
+void *fn_heartbeat(void *arg);
 
+int sockfd; 
+static int interval = 10;
+pthread_mutex_t interval_lock= PTHREAD_MUTEX_INITIALIZER;
 
 int main(int argc,char *argv[])
 {
 	//0. heartbeat package sent every 15 seconds 
 	signal(SIGALRM,sig_alrm);
-	alarm(ALRMTIME);
-	
+	alarm(interval);
+
 	signal(SIGPIPE,sig_pipe);
 
 	//1. create a socket
@@ -46,6 +47,9 @@ int main(int argc,char *argv[])
 
 	//3. connect to the server
 	Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
+
+	pthread_t tid;
+	pthread_create(&tid, NULL, fn_heartbeat, NULL); // receive heartbeat packet
 
 	//4. get message from stdin
 	char msg[MAXLINE];
@@ -65,11 +69,39 @@ int main(int argc,char *argv[])
 static void sig_alrm(int signo)
 {
 	psend(HEARTBEAT, sockfd, NULL, 0, 0); //send heartbeat package
-	alarm(ALRMTIME);
+	alarm(interval);
+
+	pthread_mutex_lock(&interval_lock);
+	interval += interval / 2;
+	if(interval > 90) {
+		kill(getpid(), SIGPIPE);	
+	}
+	pthread_mutex_unlock(&interval_lock);
 }
 static void sig_pipe(int signo)
 {
 	fprintf(stderr, "the server has been disconnected\n");	
 	close(sockfd);
 	exit(0);
+}
+
+void *fn_heartbeat(void *arg)
+{
+	int len = MAXLINE;
+	char recbuff[len * 2];
+	bzero(recbuff, len * 2);
+	while(1) {
+		size_t n = 0;
+		if((n = recv(sockfd, recbuff, len, 0)) < 0) { // received data 
+			perror("recv error");
+		} else if(n > 0) {
+			int type = resolve(NULL, recbuff, &n); //resolve the message
+			if(type == HEARTBEAT) {
+				pthread_mutex_lock(&interval_lock);
+				interval = 10;
+				pthread_mutex_unlock(&interval_lock);
+			}
+		}
+	}
+	pthread_exit(NULL);
 }

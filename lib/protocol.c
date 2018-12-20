@@ -35,7 +35,7 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
 /*
  * resolve data of receive the message
  */
-int resolve(char* dstptr, const byte *rscptr, size_t *len);
+int resolve(unsigned char * dstptr, const byte *rscptr, size_t *len);
 
 
 
@@ -200,7 +200,7 @@ ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	 */
 	if(--len <= 0)   //-1: not included \n
 		return 0; 
-	
+
 	/* wrong data segment command type */
 	if(dcmd != REPORT && dcmd != HEARTBEAT) {
 		errno = EINVAL;
@@ -296,10 +296,9 @@ ssize_t precv(int sockfd, void *buf, size_t len, int flags)
 	}
 }
 
-int resolve(char *dstptr, const byte *rscptr, size_t *len)
+int resolve(unsigned char *dstptr, const byte *rscptr, size_t *len)
 {
-	bzero(dstptr, sizeof(dstptr));
-	if(dstptr == NULL || rscptr == NULL || *rscptr != HEADER || *(rscptr + *len - 1) != 0x55) {
+	if(rscptr == NULL || *rscptr != HEADER || *(rscptr + *len - 1) != 0x55) {
 		errno = EINVAL;
 		perror("resolve error");
 		return -1;
@@ -335,7 +334,11 @@ int resolve(char *dstptr, const byte *rscptr, size_t *len)
 		fprintf(stderr,"data error\n");
 		return (-1);
 	}
-
+	if(dstptr == NULL) {
+		return  (*(rescptr + 4));
+	} else {
+		bzero(dstptr, sizeof(dstptr));
+	}
 
 	int i;
 	switch(*(rescptr + 4)) { // *(rescptr + 4)  is the dcmd
