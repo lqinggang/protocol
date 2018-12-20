@@ -9,15 +9,15 @@ Format:
 
 
 description:
-header: 0xAA \<br>
-length: option (1 byte) + cmd (1 byte) + data (N byte) \<br>
-optoin: high 4-digit is version number, and low 4-digit is reseved \<br>
-cmd   : 0x04 \<br>
-data  : data[0] = 0x01 or 0x02 \<br>
-         0x01: heartbeat package \<br>
-		 0x02: report  \<br>
-crc   : crc value of  length[2], option, cmd and data \<br>
-tail  : 0x55 \<br>
+header: 0xAA <br>
+length: option (1 byte) + cmd (1 byte) + data (N byte) <br>
+optoin: high 4-digit is version number, and low 4-digit is reseved <br>
+cmd   : 0x04 <br>
+data  : data[0] = 0x01 or 0x02 <br>
+         0x01: heartbeat package <br>
+		 0x02: report  <br>
+crc   : crc value of  length[2], option, cmd and data <br>
+tail  : 0x55 <br>
 
 
 Build:
