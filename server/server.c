@@ -75,7 +75,7 @@ int main(int argc,char *argv[])
 				close(listenfd);
 				close(accfd);
 				return -1;
-			} else if(pid == 0) { //child
+			} else if(pid == 0) { // first child
 
 				/*
 				 * only keep the listenfd of the parent process
@@ -106,35 +106,44 @@ int main(int argc,char *argv[])
 						close(accfd);
 						exit(1);
 					}
-				} else { //first child 
-
-					/*
-					 * only keep the listenfd of the parent process
-					 */
-					close(accfd);
-
-					/*
-					 * make the parent process of the second
-					 * second child process into init process
-					 */
-					exit(0); 
-				}
-
-			} else { //parent
+				} 
 
 				/*
-				 * only keep the accfd of the first child process
+				 * first child 
 				 */
-				close(accfd); 
 
-				/* wait for child process
-				 * prevent zombie process
+				/*
+				 * only keep the listenfd of the parent process
 				 */
-				if(signal(SIGCHLD, sig_chld) < 0) { 
-					perror("SIGCHLD error");
-				}
-				//do something
+				close(accfd);
+
+				/*
+				 * make the parent process of the second
+				 * second child process into init process
+				 */
+				exit(0); 
+
+			} 
+
+			/*
+			 * parent of first child.
+			 */
+
+			/*
+			 * only keep the accfd of the first child process
+			 */
+			close(accfd); 
+			if(waitpid(pid, NULL, 0) != pid) {
+				printf("waitpid error\n");
 			}
+
+			//	/* wait for child process
+			//	 * prevent zombie process
+			//	 */
+			//	if(signal(SIGCHLD, sig_chld) < 0) { 
+			//		perror("SIGCHLD error");
+			//	}
+			//do something
 		}
 	}
 	return 0;
