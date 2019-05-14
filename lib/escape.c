@@ -1,13 +1,7 @@
-/****************************************
-  > File Name: escape.c
-  > Author: lqinggang
-  > Email: 1944058861@qq.com
-  > Create Time: Sat 08 Dec 2018 05:27:09 PM CST
-  > Description: Data escaping and reescaping
- ****************************************/
-
-
 #include "escape.h"
+#include <stdio.h>
+#include <string.h>
+#include "protocol.h"
 
 /*
  * rscptr: the data need to be escape
@@ -15,24 +9,28 @@
  * length: length that need to be escape
  *         and return the length after escaping
  */
-void escape(const char *rscptr, char *dstptr, size_t *length)
+void
+escape(const  char *rscptr,  char *dstptr, size_t *length)
 {
-	volatile unsigned char c;
-	if(*length > 0) {
+	volatile  char c;
+	if(*length > 0)
+    {
 		size_t i = 0;
 		int len = 0;
 		c = *rscptr; //get current character
-		while(i < *length ) {
+		while(i < *length ) 
+        {
 			len++;
 
 			/* need to be escape */
-			if(*rscptr == header || *rscptr == tail || *rscptr == escapeByte) {
+			if(*(unsigned char *)rscptr == HEADER || *(unsigned char *)rscptr == TAIL || *(unsigned char *)rscptr == ESCAPEBYTE) 
+            {
 
 				/* characters that need to be escaped plus 1
 				 * and the escape character is inserted before it
 				 */
 				(int)c++;
-				*dstptr++ = escapeByte;
+				*dstptr++ = ESCAPEBYTE;
 				len++;
 			}
 			*dstptr = c;
@@ -56,22 +54,26 @@ void escape(const char *rscptr, char *dstptr, size_t *length)
  * length: length that need to be reescape 
  *         and return the length after reescaping
  */
-void reescape(const char *rscptr, char *dstptr, size_t *length)
+void
+reescape(const  char *rscptr,  char *dstptr, size_t *length)
 {
-	if(*length > 0) {
+	if(*length > 0)
+    {
 		size_t i = 0;
 		size_t len = 0;
 		unsigned char c;
-		c = *rscptr; //get current character
-		while(i < *length) {
+		c = *(unsigned char *)rscptr; //get current character
+		while(i < *length) 
+        {
 			len++;
-			if(escapeByte == c) { // the next character need to be reescape
+			if(ESCAPEBYTE == c)  // the next character need to be reescape
+            {
 
 				/*
 				 *  get the character that need to be reescape 
 				 *  after escape character 
 				 */
-				c = *(++rscptr);
+				c = *(unsigned char *)(++rscptr);
 
 				/*
 				 * restore back to the original character
@@ -79,7 +81,7 @@ void reescape(const char *rscptr, char *dstptr, size_t *length)
 				(int)c--;
 				len--;
 			}
-			*dstptr = c;
+			*(unsigned char *)dstptr = c;
 	
 			/* get the address of the next character
 			 * and next save character
@@ -88,7 +90,7 @@ void reescape(const char *rscptr, char *dstptr, size_t *length)
 			dstptr++;
 
 			i++;
-			c = *rscptr; //get current character
+			c = *(unsigned char *)rscptr; //get current character
 		}
 		*length = len;
 	} 

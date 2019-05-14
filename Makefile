@@ -2,21 +2,22 @@ MAKE=make
 CC=gcc
 LIBDIR=./lib/
 ROOT=$(shell pwd)
-LINK=-L. -L./lib/ -I. -I./include/
-CFLAGS=-g -L.. -L. -L$(ROOT)/lib/ -I.. -I. -I$(ROOT)/include/ -lwrapsock  -lcrc -lescape -lprotocol
-export MAKE CC LIBDIR ROOT LINK CFLAGS
+LDFLAGS= -lwrapsock  -lcrc -lescape -lprotocol
+CFLAGS= -g -Wall -W -L. -L.. -L$(ROOT)/lib/ -I. -I.. -I$(ROOT)/include/
+export MAKE CC LIBDIR ROOT LDFLAGS CFLAGS
+
 ALL:LIB CLIENT SERVER 
 LIB:
-	cd $(LIBDIR) && $(MAKE) 
+	make -C $(LIBDIR)
 CLIENT:
-	cd $(ROOT)/client/ && $(MAKE) 
+	make -C $(ROOT)/client
 SERVER:
-	cd $(ROOT)/server/ && $(MAKE)
+	make -C $(ROOT)/server
 
 .PHONY:clean
 clean:
-	cd $(LIBDIR) && rm  -rf *.so
-	cd ./client/ && rm -rf client client.o
-	cd ./server/ && rm -rf server server.o
+	make -C $(LIBDIR) clean
+	make -C $(ROOT)/client clean
+	make -C $(ROOT)/server clean
 
 

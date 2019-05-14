@@ -1,10 +1,13 @@
-ALL=libwrapsock.so libcrc.so libescape.so libprotocol.so
-CFLAGS=-g -L. -L../lib/ -I. -I../include/ -fPIC -shared 
+LDFLAGS= -fPIC -shared
 
-LIB:$(ALL)
-lib%.so:%.c ../include/%.h
-	$(CC) $< $(CFLAGS) -o $@
+SRC=$(wildcard *.c)
+OBJS=$(patsubst %.c, lib%.so, $(SRC))
+
+LIB:$(OBJS)
+
+lib%.so:%.c $(ROOT)/include/%.h
+	$(CC) $< $(CFLAGS) -o $@ $(LDFLAGS)
 
 .PHONY:clean
 clean:
-	rm -rf $(ALL) 
+	rm -rf $(OBJS)

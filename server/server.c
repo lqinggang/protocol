@@ -1,29 +1,32 @@
-/****************************************
-  > File Name: server.c
-  > Author: lqinggang
-  > Email: 1944058861@qq.com
-  > Create Time: Tue 11 Dec 2018 03:54:25 PM CST
- ****************************************/
-
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "wrapsock.h"
+#include "protocol.h"
 
-static void sig_chld(int signo)
-{
-	int status;
-	while(wait(-1, &status,WNOHANG) > 0);
-}
+//static void
+//sig_chld(int signo)
+//{
+//	int status;
+//	while(wait(-1, &status,WNOHANG) > 0);
+//}
 
 
-int main(int argc,char *argv[])
+int
+main(void)
 {
 	//1.server addr
 	struct sockaddr_in servaddr;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); //0.0.0.0
-	servaddr.sin_port = htons(ServPort);//12345
+	servaddr.sin_port = htons(SERVERPORT);//12345
 	servaddr.sin_family = AF_INET;
 
 	//2.create a socket
@@ -37,30 +40,38 @@ int main(int argc,char *argv[])
 	//4.listen
 	Listen(listenfd, BACKLOG);
 
-	while(1) {
+	while(1)
+    {
 		printf("wait for client....\n");
 
 		//5.wait for client access
 		int accfd;
 		struct sockaddr addr;
 		socklen_t addrlen;
-		if((accfd = Accept(listenfd, (struct sockaddr *) &addr, &addrlen)) < 0) { 
-			if(errno == EINTR)
+		if ((accfd = Accept(listenfd, (struct sockaddr *) &addr, &addrlen)) < 0) 
+        { 
+			if (errno == EINTR)
+            {
 				continue;
-			else {
+            }
+			else
+            {
 				close(listenfd);
 				return -1;
 			}
-		} else {
-
+		}
+        else
+        {
 			//get client info
 			struct sockaddr_in cliaddr;
 			socklen_t cliaddrlen = sizeof(cliaddr);
-			if(getpeername(accfd,(struct sockaddr *)&cliaddr,&cliaddrlen) < 0) {
+			if (getpeername(accfd, (struct sockaddr *) &cliaddr, &cliaddrlen) < 0)
+            {
 				printf("getpeername error.\n");
-			} else {
-				printf("connect by %s:%d\n",inet_ntoa(cliaddr.sin_addr),cliaddr.sin_port );
-
+			}
+            else
+            {
+				printf("connect by %s:%d\n", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
 			}
 
 			/*
@@ -70,13 +81,15 @@ int main(int argc,char *argv[])
 			 */
 			//6.create a process to receive data.
 			pid_t pid;
-			if((pid = fork()) < 0) {
+			if ((pid = fork()) < 0)
+            {
 				perror("fork error: ");
 				close(listenfd);
 				close(accfd);
 				return -1;
-			} else if(pid == 0) { // first child
-
+			}
+            else if (pid == 0)  // first child
+            {
 				/*
 				 * only keep the listenfd of the parent process
 				 */
@@ -84,24 +97,29 @@ int main(int argc,char *argv[])
 
 				/* that will be have two accfd socket,if success */
 				pid_t pid2;
-				if((pid2 = fork()) < 0) {
+				if((pid2 = fork()) < 0)
+                {
 					perror("fork error: ");
 					close(accfd);
 					return -1;
-				} else if(pid2 == 0) { // second child
+				}
+                else if (pid2 == 0)  // second child
+                { 
 					sleep(1);
 
 					//7. receive messsage 
 					size_t n;
 					char buf[MAXLINE];
-					while((n = precv(accfd, buf, MAXLINE, 0)) > 0) {
-						fprintf(stdout ,"recv: %s\n", buf);
+			        memset(buf, 0, MAXLINE);
+					while ((n = precv(accfd, buf, MAXLINE, 0)) > 0) 
+                    {
+						fprintf(stdout, "recv: %s\n", buf);
 						fflush(NULL);
-						bzero(buf, MAXLINE);
+						memset(buf, 0, MAXLINE);
 					} //end recv
-					if(errno != EINTR) {
-						printf("disconnect by %s:%d\n",
-								inet_ntoa(cliaddr.sin_addr),cliaddr.sin_port );
+					if (errno != EINTR) 
+                    {
+						printf("disconnect by %s:%d\n", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
 						fflush(stdout);
 						close(accfd);
 						exit(1);
@@ -133,7 +151,8 @@ int main(int argc,char *argv[])
 			 * only keep the accfd of the first child process
 			 */
 			close(accfd); 
-			if(waitpid(pid, NULL, 0) != pid) {
+			if (waitpid(pid, NULL, 0) != pid) 
+            {
 				printf("waitpid error\n");
 			}
 

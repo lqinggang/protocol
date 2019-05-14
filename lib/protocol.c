@@ -1,130 +1,25 @@
-/****************************************
-  > File Name: protocal.c
-  > Author: lqinggang
-  > Email: 1944058861@qq.com
-  > Create Time: Sat 08 Dec 2018 03:19:04 PM CST
- ****************************************/
-
 #include "protocol.h"
-
-/*
- * generate data that needs to be send
- */
-static unsigned char *generadata(int dcmd, const void *msg, unsigned char *data, size_t *length);
-
-/*
- * generate heartbeat package
- */
-static unsigned char *heartbeat(struct interaction interac, unsigned char *data, size_t *length);
-
-/*
- * generate date message
- */
-static unsigned char *report(struct interaction interac, const unsigned char *msg, unsigned char *data, size_t *length);
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/select.h>
+#include "crc.h"
+#include "escape.h"
+#include "wrapsock.h"
 
 /*
  * calculate the crc value of  (length, option, cmd and data)
- */
-static unsigned char cal_crc(struct interaction interac);
-
-/*
- * generate protocol package
- */
-static unsigned char *getdata(struct interaction interac, unsigned char *data, size_t *length);
-
-/*
- * resolve data of receive the message
- */
-int resolve(unsigned char * dstptr, const byte *rscptr, size_t *len);
-
-
-
-
-/*
- * dcmd: the data command type
- * msg: the message, need to send
- * data: save the generated data
- * length: length of data, and return the number of bytes filled.
- */
-unsigned char *generadata(int dcmd, const void *msg, unsigned char *data, size_t *length)
-{
-	/* wrong data segment command type */
-	if(dcmd != REPORT && dcmd != HEARTBEAT) { 
-		errno = EINVAL;
-		return NULL;
-	}
-
-	unsigned char *sendmsg = (unsigned char *)msg;
-	struct interaction interac;
-	interac.header = HEADER;
-	interac.option = version(0);
-	interac.cmd = CMD;
-	interac.tail = TAIL;
-
-	switch(dcmd) {
-	case REPORT:
-		*(interac.data) = REPORT; 
-		data = report(interac, sendmsg, data, length); //get report message
-		break;
-	case HEARTBEAT:
-		*(interac.data) = HEARTBEAT; 
-		data = heartbeat(interac, data, length); //get heartbeat message 
-		break;
-	}
-	return data;
-}
-
-/*
- * interac: protocol struct
- * data: save the generated
- * length: length of data
- */
-static unsigned char *heartbeat(struct interaction interac,unsigned char *data, size_t *length)
-{
-	interac.length[0] = 0x0;
-	interac.length[1] = 0x03;
-	interac.crc = cal_crc(interac); //calculate the crc value
-	return getdata(interac, data, length); //get all message 
-}
-
-/*
- * interac: protocol struct
- * msg: the data for send
- * data: save the generated
- * length: length of data
- */
-static unsigned char *report(struct interaction interac, const unsigned char *msg, unsigned char *data, size_t *length)
-{
-	int i;
-	int len = *length;
-	for(i = 0; i < len; i++) {
-		/* append  (msg) to the data segment 
-		 *	+1: the first character is REPORT/HEARTBEAT, see generadata() methods
-		 */
-		*(interac.data + 1 + i) =*(msg++); 
-	}
-	*(interac.data + len + 1) = '\0'; 
-
-	unsigned int n = strlen(interac.data) + 2; //+2:option and cmd
-
-	interac.length[0] = (n >> (sizeof(byte) * 8) & 0xFF); 
-	interac.length[1] = (n & 0xFF);
-
-	interac.crc = cal_crc(interac); //calculate the crc value
-
-	return getdata(interac, data, length); //get all message 
-}
-
-/*
  * calculate the crc value for length[2] + option 
  * +cmd + data
  * interac: protocol struct
  *
  */
-static unsigned char cal_crc(struct interaction interac)
+static char
+cal_crc(struct interaction interac)
 {
 	int dlen = strlen(interac.data);
-	unsigned char tocrc[ 4 + dlen];// +4: length[2] + optioon + cmd
+	 char tocrc[ 4 + dlen];// +4: length[2] + optioon + cmd
 	bzero(tocrc, sizeof(tocrc));
 	tocrc[0] = interac.option;
 	tocrc[1] = interac.length[0];
@@ -132,7 +27,8 @@ static unsigned char cal_crc(struct interaction interac)
 	tocrc[3] = interac.cmd;
 	int i;
 	//int len = strlen(interac.data); 
-	for(i = 0; i < dlen; i++) {
+	for(i = 0; i < dlen; i++) 
+    {
 		*(tocrc + 4 + i) = *(interac.data + i); //+4: length[2] + option + cmd
 	}
 
@@ -140,14 +36,16 @@ static unsigned char cal_crc(struct interaction interac)
 }
 
 /*
+ * generate protocol package
  * generate message
  * interac: protocol struct
  * data: save the generated data
  * length: length of data
  */
-static unsigned char *getdata(struct interaction interac, unsigned char *data, size_t *length)
+static char *
+getdata(struct interaction interac, char *data, size_t *length)
 {
-	unsigned char rsc[strlen(interac.data) + 6]; //+6: length[2] + option + cmd + crc
+	char rsc[strlen(interac.data) + 6]; //+6: length[2] + option + cmd + crc
 	bzero(rsc, sizeof(rsc));
 	rsc[0] = interac.option;
 	rsc[1] = interac.length[0];
@@ -156,7 +54,8 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
 
 	int i;
 	int dlen = strlen(interac.data);
-	for(i = 0; i< dlen; i++) {
+	for(i = 0; i< dlen; i++) 
+    {
 		*(rsc + 4 + i) = *(interac.data + i); //+4: length[2] + option + cmd
 	}
 
@@ -184,121 +83,101 @@ static unsigned char *getdata(struct interaction interac, unsigned char *data, s
 	*length = len + 2; //+2: header + tail
 	return data;
 }
-/*
- * send message 
- * dcmd: data command 
- * sockfd: socket 
- * buf: the message need to be send 
- * len: the length of the buf
- * flags: see the send() method
- */
-ssize_t psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
-{
-	/*
-	 * not send when the length is less than 
-	 * or equal to 0
-	 */
-	if(--len <= 0)   //-1: not included \n
-		return 0; 
 
+/*
+ * generate date message
+ * interac: protocol struct
+ * msg: the data for send
+ * data: save the generated
+ * length: length of data
+ */
+static char *
+report(struct interaction interac, const char *msg, char *data, size_t *length)
+{
+	int i;
+	int len = *length;
+	for(i = 0; i < len; i++) 
+    {
+		/* append  (msg) to the data segment 
+		 *	+1: the first character is REPORT/HEARTBEAT, see generadata() methods
+		 */
+		*(interac.data + 1 + i) =*(msg++); 
+	}
+	*(interac.data + len + 1) = '\0'; 
+
+	 int n = strlen(interac.data) + 2; //+2:option and cmd
+
+	interac.length[0] = (n >> (sizeof(byte) * 8) & 0xFF); 
+	interac.length[1] = (n & 0xFF);
+
+	interac.crc = cal_crc(interac); //calculate the crc value
+
+	return getdata(interac, data, length); //get all message 
+}
+
+/*
+ * generate heartbeat package
+ * interac: protocol struct
+ * data: save the generated
+ * length: length of data
+ */
+static char *
+heartbeat(struct interaction interac, char *data, size_t *length)
+{
+	interac.length[0] = 0x0;
+	interac.length[1] = 0x03;
+	interac.crc = cal_crc(interac); //calculate the crc value
+	return getdata(interac, data, length); //get all message 
+}
+
+/*
+ * generate data that needs to be send
+ * dcmd: the data command type
+ * msg: the message, need to send
+ * data: save the generated data
+ * length: length of data, and return the number of bytes filled.
+ */
+static char *
+generadata(int dcmd, const void *msg, char *data, size_t *length)
+{
 	/* wrong data segment command type */
-	if(dcmd != REPORT && dcmd != HEARTBEAT) {
+	if(dcmd != REPORT && dcmd != HEARTBEAT) 
+    { 
 		errno = EINVAL;
-		perror("unknow type");
-		return -1;
-	}
-	char *data;
-	if(dcmd == REPORT) {
-		data = (char *)malloc(sizeof(char *) * len * 2);
-	} else {
-		data = (char *)malloc(sizeof(char *) * 10);
+		return NULL;
 	}
 
-	if(data == NULL) {
-		printf("psend error:no enough space\n");
-		return -1;
-	}
-	bzero(data,sizeof(data)); //clear
+	char *sendmsg = (char *)msg;
+	struct interaction interac;
+	interac.header = HEADER;
+	interac.option = version(0);
+	interac.cmd = CMD;
+	interac.tail = TAIL;
 
-	size_t length = len;
-
-	/*
-	 * get the message, the data will be fill by generated 
-	 * message, and the length of the data after the escape
-	 *is passed back through length.
-	 */
-	generadata(dcmd, buf, data, &length); 
-
-	int err;
-	int maxfdl;
-	fd_set wset;
-	struct timeval time;
-	time.tv_sec = 0; //not wait
-	time.tv_usec = 0;
-	FD_ZERO(&wset);
-	FD_SET(sockfd, &wset);
-	maxfdl = sockfd + 1;
-	if(select(maxfdl, NULL, &wset, NULL, &time) < 0) {
-		perror("select error");
-		err = errno;
+	switch(dcmd)
+    {
+	case REPORT:
+		*(interac.data) = REPORT; 
+		data = report(interac, sendmsg, data, length); //get report message
+		break;
+	case HEARTBEAT:
+		*(interac.data) = HEARTBEAT; 
+		data = heartbeat(interac, data, length); //get heartbeat message 
+		break;
+    default:
+        break; 
 	}
-	ssize_t n = 0;
-	if(FD_ISSET(sockfd, &wset)) {
-		n = Send(sockfd, data, length, 0); //send the message 
-	} else {
-		fprintf(stderr, strerror(err));
-	}
-	free(data);
-	return (n);
+	return data;
 }
 
 /*
- * receive message 
- * sockfd: socket 
- * buf: the received data
- * len: the length of the buf
- * flags: see the send() method
+ * resolve data of receive the message
  */
-ssize_t precv(int sockfd, void *buf, size_t len, int flags)
+int
+resolve(char *dstptr, const char *rscptr, ssize_t *len)
 {
-	bzero(buf, sizeof(buf)); //clear
-
-	char recbuff[len * 2];
-	bzero(recbuff, len * 2);
-
-	size_t n = 0;
-	if((n = recv(sockfd, recbuff, len, flags)) < 0) { // received data 
-		perror("recv error");
-		return (errno);
-	}
-
-	char data[len];
-	bzero(data, len); //clear
-	if(n > 0) {
-		int type;
-		type = resolve(data, recbuff, &n); //resolve the message
-		if(type == REPORT && n > 0) {
-			strncpy(buf, data, n);
-			return (n);
-		} else if(type == HEARTBEAT) {
-
-			/*
-			 * when receiving a heartbeat packet, turn around
-			 */
-			psend(HEARTBEAT, sockfd, buf, len, flags);
-		} else {
-			return -1;	
-		}
-
-		fflush(NULL);
-	} else {
-		return (0);
-	}
-}
-
-int resolve(unsigned char *dstptr, const byte *rscptr, size_t *len)
-{
-	if(rscptr == NULL || *rscptr != HEADER || *(rscptr + *len - 1) != 0x55) {
+	if(rscptr == NULL || *(unsigned char *)rscptr != HEADER || *(unsigned char *)(rscptr + *len - 1) != TAIL)
+    {
 		errno = EINVAL;
 		perror("resolve error");
 		return -1;
@@ -330,26 +209,31 @@ int resolve(unsigned char *dstptr, const byte *rscptr, size_t *len)
 
 	size_t reslength = *len - 2;
 	reescape(rscptr + 1, rescptr, &reslength);
-	if(cal_crc8_table(rescptr, reslength - 1) != (byte)*(rescptr + reslength - 1)) {
+	if(cal_crc8_table(rescptr, reslength - 1) != (byte)*(rescptr + reslength - 1)) 
+    {
 		fprintf(stderr,"data error\n");
 		return (-1);
 	}
-	if(dstptr == NULL) {
+	if(dstptr == NULL) 
+    {
 		return  (*(rescptr + 4));
-	} else {
-		bzero(dstptr, sizeof(dstptr));
+	} 
+    else
+    {
+		bzero(dstptr, strlen(dstptr));
 	}
 
 	int i;
-	switch(*(rescptr + 4)) { // *(rescptr + 4)  is the dcmd
+	switch(*(rescptr + 4))  // *(rescptr + 4)  is the dcmd
+    {
 	case REPORT:
 
 		/*
 		 * -3:  option + cmd + dcmd
 		 * +5: length[2] + option + cmd + dcmd
 		 */
-		for(i = 0; i< length - 3; i++) { 
-
+		for(i = 0; i< length - 3; i++)
+        { 
 			/*
 			 *		 *(dstptr++) 
 			 * equivalent to:
@@ -360,7 +244,8 @@ int resolve(unsigned char *dstptr, const byte *rscptr, size_t *len)
 		}
 		break;
 	case HEARTBEAT:
-		for(i = 0; i< *len; i++) {
+		for(i = 0; i< *len; i++) 
+        {
 			*(dstptr++) = *(rescptr + 4 + i);
 		}
 		break;
@@ -371,4 +256,135 @@ int resolve(unsigned char *dstptr, const byte *rscptr, size_t *len)
 	*len = length - 3; //-3:  option + cmd + dcmd
 	*(dstptr) = '\0';
 	return (*(rscptr + 5));
+}
+
+/*
+ * send message 
+ * dcmd: data command 
+ * sockfd: socket 
+ * buf: the message need to be send 
+ * len: the length of the buf
+ * flags: see the send() method
+ */
+ssize_t 
+psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
+{
+	/*
+	 * not send when the length is less than 
+	 * or equal to 0
+	 */
+	if(--len <= 0)   //-1: not included \n
+		return 0; 
+
+	/* wrong data segment command type */
+	if(dcmd != REPORT && dcmd != HEARTBEAT)
+    {
+		errno = EINVAL;
+		perror("unknow type");
+		return -1;
+	}
+	char *data = NULL;
+	if(dcmd == REPORT)
+    {
+		data = (char *)malloc(sizeof(char *) * len * 2);
+	}
+    else
+    {
+		data = (char *)malloc(sizeof(char *) * 10);
+	}
+
+	if(data == NULL) 
+    {
+		printf("psend error:no enough space\n");
+		return -1;
+	}
+	bzero(data, strlen(data)); //clear
+
+	size_t length = len;
+
+	/*
+	 * get the message, the data will be fill by generated 
+	 * message, and the length of the data after the escape
+	 *is passed back through length.
+	 */
+	generadata(dcmd, buf, data, &length); 
+
+	int err;
+	int maxfdl;
+	fd_set wset;
+	struct timeval time;
+	time.tv_sec = 0; //not wait
+	time.tv_usec = 0;
+	FD_ZERO(&wset);
+	FD_SET(sockfd, &wset);
+	maxfdl = sockfd + 1;
+	if(select(maxfdl, NULL, &wset, NULL, &time) < 0) 
+    {
+		perror("select error");
+		err = errno;
+	}
+	ssize_t n = 0;
+	if(FD_ISSET(sockfd, &wset)) 
+    {
+		n = Send(sockfd, data, length, 0); //send the message 
+	} 
+    else
+    {
+		fprintf(stderr, strerror(err));
+	}
+	free(data);
+	return (n);
+}
+
+/*
+ * receive message 
+ * sockfd: socket 
+ * buf: the received data
+ * len: the length of the buf
+ * flags: see the send() method
+ */
+ssize_t
+precv(int sockfd, void *buf, size_t len, int flags)
+{
+    if (buf == NULL)
+    {
+        return (-1);
+    }
+	char recbuff[len * 2];
+	bzero(recbuff, len * 2);
+
+	ssize_t n = 0;
+	if((n = recv(sockfd, recbuff, len, flags)) < 0)  // received data 
+    { 
+		perror("recv error");
+		return (errno);
+	}
+
+	char data[len];
+    memset(data, 0, sizeof(data));  //clear
+	if(n > 0) 
+    {
+		int type;
+		type = resolve(data, recbuff, &n); //resolve the message
+		if(type == REPORT && n > 0) 
+        {
+			strncpy(buf, data, n);
+			return (n);
+		}
+        else if(type == HEARTBEAT)
+        {
+
+			/*
+			 * when receiving a heartbeat packet, turn around
+			 */
+			psend(HEARTBEAT, sockfd, buf, len, flags);
+		}
+        else
+        {
+			return -1;	
+		}
+
+		fflush(NULL);
+	}
+    return (0);
 }

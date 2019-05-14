@@ -1,16 +1,7 @@
-/*****************************************************************************
-File Name:    crc.c
-Description:  crc8 polynomial: x^8+x^5+x^4+1
-			  crc32 polynomial: x^32+x^26+x^23+x^22+x^16+x^12+x^10+x^8+x^7
-			  +x^5+x^4+x^2+x^1+x^0
-History:	
-Date                Author                   Description
-2017-03-13         Lucien                    Creat
-****************************************************************************/
-
 #include "crc.h"
+#include <stdbool.h>
 
-static const unsigned char crc8_table[] =
+static const  char crc8_table[] =
 {
     0x00,0x31,0x62,0x53,0xc4,0xf5,0xa6,0x97,0xb9,0x88,0xdb,0xea,0x7d,0x4c,0x1f,0x2e,
     0x43,0x72,0x21,0x10,0x87,0xb6,0xe5,0xd4,0xfa,0xcb,0x98,0xa9,0x3e,0x0f,0x5c,0x6d,
@@ -30,14 +21,16 @@ static const unsigned char crc8_table[] =
     0x82,0xb3,0xe0,0xd1,0x46,0x77,0x24,0x15,0x3b,0x0a,0x59,0x68,0xff,0xce,0x9d,0xac
 };
 
-static unsigned char cal_table_high_first(unsigned char value)
+static  char
+cal_table_high_first( char value)
 {
-    unsigned char i, crc;
+     char i, crc;
 
     crc = value;
     for (i=8; i>0; --i)
     { 
-        if (crc & 0x80) {
+        if (crc & 0x80) 
+        {
             crc = (crc << 1) ^ 0x31;        
 		} else {
             crc = (crc << 1);
@@ -48,24 +41,22 @@ static unsigned char cal_table_high_first(unsigned char value)
 }
 
 
-static void  create_crc_table(void)
+static void 
+create_crc_table(void)
 {
-    unsigned short i;
-    unsigned char j;
+     short i;
+     short j;
 
     for (i=0; i<=0xFF; i++)
     {
-        //if (0 == (i%16))
-        //    printf("\n");
-
         j = i&0xFF;
-        //printf("0x%.2x, ", cal_table_high_first (j)); 
     }
 }
 
-unsigned char cal_crc8_table(unsigned char *ptr, unsigned char len) 
+ char
+cal_crc8_table( char *ptr,  char len) 
 {
-    unsigned char  crc = 0x00;
+     char  crc = 0x00;
 
     while (len--)
     {
@@ -74,11 +65,10 @@ unsigned char cal_crc8_table(unsigned char *ptr, unsigned char len)
     return (crc);
 }
 
-
-
-unsigned char cal_table_low_first(unsigned char value)
+ char
+cal_table_low_first( char value)
 {
-    unsigned char i, crc;
+     char i, crc;
 
     crc = value;
     for (i=8; i>0; --i)
@@ -91,7 +81,6 @@ unsigned char cal_table_low_first(unsigned char value)
 
     return crc;
 }
-
 
 
 static const uint32_t crc32_tab[] = {
@@ -140,7 +129,8 @@ static const uint32_t crc32_tab[] = {
     0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-uint32_t crc32(uint32_t crc, const void *buf, size_t size)
+uint32_t 
+crc32(uint32_t crc, const void *buf, size_t size)
 {
     const uint8_t *p;
 

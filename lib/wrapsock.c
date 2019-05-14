@@ -1,14 +1,14 @@
-/****************************************
-   > File Name: wrapsock.c
-   > Author: lqinggang
-   > Email: 1944058861@qq.com
-   > Create Time: Sat 08 Dec 2018 01:10:36 PM CST
-   > Description: Encapsulation of socket related functions
-****************************************/
-
 #include "wrapsock.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
-int Socket(int domain, int type, int protocol)
+
+int
+Socket(int domain, int type, int protocol)
 {
 	int sockfd;
 	if((sockfd = socket(domain, type, protocol)) < 0) {
@@ -18,8 +18,8 @@ int Socket(int domain, int type, int protocol)
 	return (sockfd);
 }
 
-
-void Inet_pton(int domain, const char *ptr, void *addrptr)
+void
+Inet_pton(int domain, const char *ptr, void *addrptr)
 {
 	int n;
 	if((n = inet_pton(domain, ptr, addrptr)) <= 0) {
@@ -32,16 +32,18 @@ void Inet_pton(int domain, const char *ptr, void *addrptr)
 	}
 }
 
-void Connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen)
+void
+Connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen)
 {
-	int n;
+	int n = -1;
 	if((n = connect(sockfd, servaddr, addrlen)) < 0) {
 		perror("conect error: ");
 	}
 }
 
 
-ssize_t Send(int sockfd, const void *ptr, size_t len, int flags)
+ssize_t
+Send(int sockfd, const void *ptr, size_t len, int flags)
 {
 	ssize_t n;
 	if((n = send(sockfd, ptr, len, flags)) < 0) {
@@ -50,7 +52,8 @@ ssize_t Send(int sockfd, const void *ptr, size_t len, int flags)
 	return n;
 }
 
-ssize_t Write(int sockfd, const void *ptr, size_t len) 
+ssize_t
+Write(int sockfd, const void *ptr, size_t len) 
 {
 	ssize_t n;
 	if((n = write(sockfd, ptr, len)) < 0) {
@@ -59,8 +62,8 @@ ssize_t Write(int sockfd, const void *ptr, size_t len)
 	return n;
 }
 
-
-int Listen(int sockfd, int backlog)
+int
+Listen(int sockfd, int backlog)
 {
 	if(listen(sockfd, backlog) < 0) {
 		perror("listen error: ");
@@ -69,7 +72,8 @@ int Listen(int sockfd, int backlog)
 	return 0;
 }
 
-int Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen)
+int
+Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen)
 {
 	int on = 1;
 	if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
@@ -87,7 +91,8 @@ int Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen)
 	return 0;
 }
 
-int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) 
+int
+Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) 
 {
 	int acceptfd;
 	if((acceptfd = accept(sockfd, addr, addrlen)) < 0) {
@@ -96,4 +101,3 @@ int Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 	}
 	return acceptfd;
 }
-
