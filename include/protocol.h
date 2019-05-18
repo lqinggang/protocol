@@ -8,14 +8,14 @@
  *  |-------|--------|-------|-------|
  *  |  head |      length    | option|
  *  |-------|--------|-------|-------|
- *  |  cmd  |  dcmd  |	     |  tail |
+ *  |  cmd  |  dcmd  |	   data      |
  *  |-------|--------|-------|-------|
- *          |  data: N byte  |
+ *  |  data: N byte  |  crc  |  tail |
  */
 
 #define HEADER          0xAA
-#define TAIL            0x55
-#define CMD             0x04
+#define TAIL            0xFF
+#define CMD             0x01
 #define ESCAPEBYTE      0xCC
 #define REPORT          2
 #define HEARTBEAT       1
@@ -23,17 +23,23 @@
 #define version(num)    (0x00 | (num << 4))
 #define MAXLENGTH       2048
 
+#define     TIMEOUT     64
+#define     INTERVAL    16
+
+#define HEARTREQUEST    "Are you still there"
+#define HEARTRESPOND    "Yes, I'm"
+
 typedef  char byte;
 
 struct interaction {
-	byte header; // == 0xAA
-	byte length[2]; //length of (option + cmd + data)
-	byte option;   
-	byte cmd;  //== CMD
+	byte header: 8;     // == 0xAA
+	byte length[2];     //length of (option + cmd + data)
+	byte option: 8;   
+	byte cmd: 8;        //== CMD
 	char data[MAXLENGTH];
-	byte crc;
-	byte tail; // == 0x55
-	byte dcmd; //0x01: HEARTBEAT; 0x02:REPORT
+	byte crc: 8;
+	byte tail: 8;       // == 0x55
+	byte dcmd: 8;       //0x01: HEARTBEAT; 0x02:REPORT
 };
 
 extern int resolve(char *dstptr, const char *rscptr, ssize_t *len);

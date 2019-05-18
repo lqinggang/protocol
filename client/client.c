@@ -12,19 +12,20 @@
 #include "escape.h"
 #include "protocol.h"
 
-int sockfd; 
-static int interval = 10;
+
+static int sockfd = -1;
+static int interval = INTERVAL;
 pthread_mutex_t interval_lock= PTHREAD_MUTEX_INITIALIZER;
 
 static void
 sig_alrm(int signo)
 {
-	psend(HEARTBEAT, sockfd, NULL, 0, 0); //send heartbeat package
+	psend(HEARTBEAT, sockfd, HEARTREQUEST, strlen(HEARTREQUEST), 0); //send heartbeat package
 	alarm(interval);
 
 	pthread_mutex_lock(&interval_lock);
 	interval += interval / 2;
-	if(interval > 90) 
+	if(interval > TIMEOUT) 
 	{
 		kill(getpid(), SIGPIPE);	
 	}
@@ -60,7 +61,7 @@ fn_heartbeat(void *arg)
 			if(type == HEARTBEAT) 
             {
 				pthread_mutex_lock(&interval_lock);
-				interval = 10;
+				interval = INTERVAL;
 				pthread_mutex_unlock(&interval_lock);
 			}
 		}
@@ -71,11 +72,11 @@ fn_heartbeat(void *arg)
 int
 main(void)
 {
-//	//0. heartbeat package sent every 15 seconds 
-//	signal(SIGALRM, sig_alrm);
-//	alarm(interval);
-//
-//	signal(SIGPIPE, sig_pipe);
+	//0. heartbeat package sent every 15 seconds 
+	signal(SIGALRM, sig_alrm);
+	alarm(interval);
+
+	signal(SIGPIPE, sig_pipe);
 
 	//1. create a socket
 	if((sockfd = Socket(AF_INET, SOCK_STREAM, 0)) == 0) 

@@ -8,6 +8,7 @@
 #include "escape.h"
 #include "wrapsock.h"
 
+
 /*
  * calculate the crc value of  (length, option, cmd and data)
  * calculate the crc value for length[2] + option 
@@ -19,8 +20,8 @@ static char
 cal_crc(struct interaction interac)
 {
 	int dlen = strlen(interac.data);
-	 char tocrc[ 4 + dlen];// +4: length[2] + optioon + cmd
-	bzero(tocrc, sizeof(tocrc));
+	char tocrc[ 4 + dlen];      // +4: length[2] + option + cmd
+	memset(tocrc, 0, sizeof(tocrc));
 	tocrc[0] = interac.option;
 	tocrc[1] = interac.length[0];
 	tocrc[2] = interac.length[1];
@@ -46,7 +47,7 @@ static char *
 getdata(struct interaction interac, char *data, size_t *length)
 {
 	char rsc[strlen(interac.data) + 6]; //+6: length[2] + option + cmd + crc
-	bzero(rsc, sizeof(rsc));
+	memset(rsc, 0, sizeof(rsc));
 	rsc[0] = interac.option;
 	rsc[1] = interac.length[0];
 	rsc[2] = interac.length[1];
@@ -81,7 +82,7 @@ getdata(struct interaction interac, char *data, size_t *length)
 	*data = interac.header;
 	*(data + len + 1) = interac.tail;
 	*length = len + 2; //+2: header + tail
-	return data;
+	return (data);
 }
 
 /*
@@ -105,14 +106,14 @@ report(struct interaction interac, const char *msg, char *data, size_t *length)
 	}
 	*(interac.data + len + 1) = '\0'; 
 
-	 int n = strlen(interac.data) + 2; //+2:option and cmd
+	 int n = strlen(interac.data) + 2;  //+2:option and cmd
 
 	interac.length[0] = (n >> (sizeof(byte) * 8) & 0xFF); 
 	interac.length[1] = (n & 0xFF);
 
-	interac.crc = cal_crc(interac); //calculate the crc value
+	interac.crc = cal_crc(interac);  //calculate the crc value
 
-	return getdata(interac, data, length); //get all message 
+	return (getdata(interac, data, length));  //get all message 
 }
 
 /*
@@ -127,7 +128,38 @@ heartbeat(struct interaction interac, char *data, size_t *length)
 	interac.length[0] = 0x0;
 	interac.length[1] = 0x03;
 	interac.crc = cal_crc(interac); //calculate the crc value
-	return getdata(interac, data, length); //get all message 
+	return (getdata(interac, data, length)); //get all message 
+}
+
+/*
+ * get the date
+ * interac: protocol struct
+ * msg: the data for send
+ * data: save the generated
+ * length: length of data
+ */
+static char *
+get_data(struct interaction interac, const char *msg, char *data, size_t *length)
+{
+	int i;
+	int len = *length;
+	for(i = 0; i < len; i++) 
+    {
+		/* append  (msg) to the data segment 
+		 *	+1: the first character is REPORT/HEARTBEAT, see generadata() methods
+		 */
+		*(interac.data + 1 + i) =*(msg++); 
+	}
+	*(interac.data + len + 1) = '\0'; 
+
+	 int n = strlen(interac.data) + 2; //+2:option and cmd
+
+	interac.length[0] = (n >> (sizeof(byte) * 8) & 0xFF); 
+	interac.length[1] = (n & 0xFF);
+
+	interac.crc = cal_crc(interac); //calculate the crc value
+
+	return (getdata(interac, data, length)); //get all message 
 }
 
 /*
@@ -144,7 +176,7 @@ generadata(int dcmd, const void *msg, char *data, size_t *length)
 	if(dcmd != REPORT && dcmd != HEARTBEAT) 
     { 
 		errno = EINVAL;
-		return NULL;
+		return (NULL);
 	}
 
 	char *sendmsg = (char *)msg;
@@ -158,17 +190,47 @@ generadata(int dcmd, const void *msg, char *data, size_t *length)
     {
 	case REPORT:
 		*(interac.data) = REPORT; 
-		data = report(interac, sendmsg, data, length); //get report message
 		break;
 	case HEARTBEAT:
 		*(interac.data) = HEARTBEAT; 
-		data = heartbeat(interac, data, length); //get heartbeat message 
 		break;
     default:
         break; 
 	}
-	return data;
+
+    data = get_data(interac, sendmsg, data, length); //get report message
+	return (data);
 }
+
+static ssize_t
+recv_timeout(int sockfd, void *buf, size_t len)
+{
+	/*
+	 *  Try to receive data
+	 */
+    int numsec;
+    ssize_t receive_length;
+	for(numsec = 1; numsec <= TIMEOUT; numsec <<= 1) 
+    {
+		if((receive_length = recv(sockfd, buf, len, MSG_DONTWAIT)) > 0) 
+        {
+            return (receive_length);
+		}
+        else if (receive_length == 0)  /* the peer has performed an orderly shutdown. */
+        {
+            break;
+        }
+
+		/*
+		 * Delay defore trying again.
+		 */
+		if(numsec <= TIMEOUT / 2)
+				sleep(numsec);
+	}
+    errno = ETIMEDOUT;
+    return (-1);
+}
+
 
 /*
  * resolve data of receive the message
@@ -180,7 +242,7 @@ resolve(char *dstptr, const char *rscptr, ssize_t *len)
     {
 		errno = EINVAL;
 		perror("resolve error");
-		return -1;
+		return (-1);
 	}
 
 	/*     byte    byte    byte    byte
@@ -200,12 +262,12 @@ resolve(char *dstptr, const char *rscptr, ssize_t *len)
 	/* byte length[2] to  int length */
 	length |= ((rlen[0] << sizeof(byte) * 8) | rlen[1]);
 
-	byte option = *(rscptr + 1);
-	byte cmd = *(rscptr + 4);
-	byte crc = *(rscptr + *len - 2);
+//	byte option = *(rscptr + 1);
+//	byte cmd = *(rscptr + 4);
+//	byte crc = *(rscptr + *len - 2);
 
 	char rescptr[*len + 1];
-	bzero(rescptr, *len + 1);
+	memset(rescptr, 0, *len + 1);
 
 	size_t reslength = *len - 2;
 	reescape(rscptr + 1, rescptr, &reslength);
@@ -216,11 +278,11 @@ resolve(char *dstptr, const char *rscptr, ssize_t *len)
 	}
 	if(dstptr == NULL) 
     {
-		return  (*(rescptr + 4));
+		return (*(rescptr + 4));
 	} 
     else
     {
-		bzero(dstptr, strlen(dstptr));
+		memset(dstptr, 0, strlen(dstptr));
 	}
 
 	int i;
@@ -250,8 +312,8 @@ resolve(char *dstptr, const char *rscptr, ssize_t *len)
 		}
 		break;
 	default:
-		printf("unknow type\n");
-		return -1;
+		printf("Unknow type\n");
+		return (-1);
 	}
 	*len = length - 3; //-3:  option + cmd + dcmd
 	*(dstptr) = '\0';
@@ -274,31 +336,23 @@ psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	 * or equal to 0
 	 */
 	if(--len <= 0)   //-1: not included \n
-		return 0; 
+		return (0); 
 
 	/* wrong data segment command type */
 	if(dcmd != REPORT && dcmd != HEARTBEAT)
     {
 		errno = EINVAL;
-		perror("unknow type");
-		return -1;
-	}
-	char *data = NULL;
-	if(dcmd == REPORT)
-    {
-		data = (char *)malloc(sizeof(char *) * len * 2);
-	}
-    else
-    {
-		data = (char *)malloc(sizeof(char *) * 10);
+		perror("Unknow type");
+		return (-1);
 	}
 
-	if(data == NULL) 
+	char *data = NULL;
+	if((data = (char *)malloc(sizeof(char) * len * 2)) == NULL)
     {
 		printf("psend error:no enough space\n");
-		return -1;
+		return (-1);
 	}
-	bzero(data, strlen(data)); //clear
+	memset(data, 0, strlen(data)); //clear
 
 	size_t length = len;
 
@@ -351,11 +405,15 @@ precv(int sockfd, void *buf, size_t len, int flags)
         return (-1);
     }
 	char recbuff[len * 2];
-	bzero(recbuff, len * 2);
+	memset(recbuff, 0, len * 2);
 
 	ssize_t n = 0;
-	if((n = recv(sockfd, recbuff, len, flags)) < 0)  // received data 
+	if((n = recv_timeout(sockfd, recbuff, len)) < 0)  // received data 
     { 
+        if (errno == ETIMEDOUT)
+        {
+            return (-1);
+        }
 		perror("recv error");
 		return (errno);
 	}
@@ -373,15 +431,15 @@ precv(int sockfd, void *buf, size_t len, int flags)
 		}
         else if(type == HEARTBEAT)
         {
-
 			/*
 			 * when receiving a heartbeat packet, turn around
 			 */
-			psend(HEARTBEAT, sockfd, buf, len, flags);
+			strncpy(buf, data, n);
+			return (psend(HEARTBEAT, sockfd, HEARTRESPOND, strlen(HEARTRESPOND), flags));
 		}
         else
         {
-			return -1;	
+			return (-1);
 		}
 
 		fflush(NULL);

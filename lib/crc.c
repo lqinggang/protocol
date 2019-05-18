@@ -24,7 +24,7 @@ static const  char crc8_table[] =
 static  char
 cal_table_high_first( char value)
 {
-     char i, crc;
+    char i, crc;
 
     crc = value;
     for (i=8; i>0; --i)

@@ -36,7 +36,6 @@ main(void)
 	//3.bind
 	Bind(listenfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
 
-
 	//4.listen
 	Listen(listenfd, BACKLOG);
 
@@ -108,7 +107,7 @@ main(void)
 					sleep(1);
 
 					//7. receive messsage 
-					size_t n;
+					ssize_t n;
 					char buf[MAXLINE];
 			        memset(buf, 0, MAXLINE);
 					while ((n = precv(accfd, buf, MAXLINE, 0)) > 0) 
@@ -116,8 +115,9 @@ main(void)
 						fprintf(stdout, "recv: %s\n", buf);
 						fflush(NULL);
 						memset(buf, 0, MAXLINE);
-					} //end recv
-					if (errno != EINTR) 
+					}  //end recv
+
+					if (errno != EINTR && errno != EAGAIN)
                     {
 						printf("disconnect by %s:%d\n", inet_ntoa(cliaddr.sin_addr), cliaddr.sin_port);
 						fflush(stdout);
