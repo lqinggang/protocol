@@ -54,6 +54,7 @@ fn_heartbeat(void *arg)
 		if((n = recv(sockfd, recbuff, len, 0)) < 0)  // received data 
         {
 			perror("recv error");
+            exit(1);
 		}
         else if(n > 0) 
         {
@@ -92,7 +93,7 @@ main(void)
 	servaddr.sin_port = htons(SERVERPORT); 
 	servaddr.sin_addr.s_addr = inet_addr(SERVERADDRESS);
     //3. connect to the server
-	Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)); 
+    Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
 	pthread_t tid;
 	pthread_create(&tid, NULL, fn_heartbeat, &sockfd); // receive heartbeat packet
