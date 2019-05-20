@@ -93,7 +93,11 @@ main(void)
 	servaddr.sin_port = htons(SERVERPORT); 
 	servaddr.sin_addr.s_addr = inet_addr(SERVERADDRESS);
     //3. connect to the server
-    Connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+    if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
+    {
+		perror("conect error");
+        exit(-1);
+    }
 
 	pthread_t tid;
 	pthread_create(&tid, NULL, fn_heartbeat, &sockfd); // receive heartbeat packet
@@ -105,7 +109,7 @@ main(void)
     {  
 		size_t length = strlen(msg);
 		//5. send the message to the server
-		psend(REPORT, sockfd, msg, length, 0);
+		psend(REPORT, sockfd, msg, length - 1, 0);  /* -1: not included \n */
 		printf("%% ");
 		fflush(NULL);
 	}

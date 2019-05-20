@@ -289,6 +289,7 @@ resolve(char *dstptr, const char *rscptr, ssize_t *len)
 	switch(*(rescptr + 4))  // *(rescptr + 4)  is the dcmd
     {
 	case REPORT:
+	case HEARTBEAT:
 
 		/*
 		 * -3:  option + cmd + dcmd
@@ -305,12 +306,12 @@ resolve(char *dstptr, const char *rscptr, ssize_t *len)
 			*(dstptr++) = *(rescptr + 5 + i);
 		}
 		break;
-	case HEARTBEAT:
-		for(i = 0; i< *len; i++) 
-        {
-			*(dstptr++) = *(rescptr + 4 + i);
-		}
-		break;
+//	case HEARTBEAT:
+//		for(i = 0; i< *len; i++) 
+//        {
+//			*(dstptr++) = *(rescptr + 4 + i);
+//		}
+//		break;
 	default:
 		printf("Unknow type\n");
 		return (-1);
@@ -335,8 +336,8 @@ psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	 * not send when the length is less than 
 	 * or equal to 0
 	 */
-	if(--len <= 0)   //-1: not included \n
-		return (0); 
+//	if(--len <= 0)   //-1: not included \n
+//		return (0); 
 
 	/* wrong data segment command type */
 	if(dcmd != REPORT && dcmd != HEARTBEAT)
@@ -380,7 +381,7 @@ psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	ssize_t n = 0;
 	if(FD_ISSET(sockfd, &wset)) 
     {
-		n = Send(sockfd, data, length, 0); //send the message 
+		n = Send(sockfd, data, length, flags); //send the message 
 	} 
     else
     {
