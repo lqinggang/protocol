@@ -364,31 +364,34 @@ psend(int dcmd, int sockfd, const void *buf, size_t len, int flags)
 	 */
 	generadata(dcmd, buf, data, &length); 
 
-	int err;
-	int maxfdl;
 	fd_set wset;
+	FD_ZERO(&wset);
+	FD_SET(sockfd, &wset);
+
 	struct timeval time;
 	time.tv_sec = 0; //not wait
 	time.tv_usec = 0;
-	FD_ZERO(&wset);
-	FD_SET(sockfd, &wset);
-	maxfdl = sockfd + 1;
-	if(select(maxfdl, NULL, &wset, NULL, &time) < 0) 
+
+	int maxfd;
+	maxfd = sockfd;
+
+    size_t nsend = 0;
+
+    while (nsend < length)
     {
-		perror("select error");
-		err = errno;
-	}
-	ssize_t n = 0;
-	if(FD_ISSET(sockfd, &wset)) 
-    {
-		n = Send(sockfd, data, length, flags); //send the message 
-	} 
-    else
-    {
-		fprintf(stderr, strerror(err));
-	}
+    	if(select(maxfd + 1, NULL, &wset, NULL, &time) < 0) 
+        {
+    		perror("select error");
+            break;
+    	}
+
+    	if(FD_ISSET(sockfd, &wset)) 
+        {
+    		nsend += Send(sockfd, data, length, flags); //send the message 
+    	} 
+    }
 	free(data);
-	return (n);
+	return (nsend);
 }
 
 /*

@@ -40,8 +40,7 @@ Inet_pton(int domain, const char *ptr, void *addrptr)
 void
 Connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen)
 {
-	int n = -1;
-	if((n = connect(sockfd, servaddr, addrlen)) < 0) 
+	if(connect(sockfd, servaddr, addrlen) < 0) 
     {
 		perror("conect error");
         exit(-1);
@@ -52,23 +51,23 @@ Connect(int sockfd, const struct sockaddr *servaddr, socklen_t addrlen)
 ssize_t
 Send(int sockfd, const void *ptr, size_t len, int flags)
 {
-	ssize_t n;
+	ssize_t n = 0;
 	if((n = send(sockfd, ptr, len, flags)) < 0)
     {
 		perror("send error");
 	}
-	return n;
+	return (n);
 }
 
 ssize_t
 Write(int sockfd, const void *ptr, size_t len) 
 {
-	ssize_t n;
+	ssize_t n = 0;
 	if((n = write(sockfd, ptr, len)) < 0) 
     {
 		perror("send error");
 	}
-	return n;
+	return (n);
 }
 
 int
@@ -77,16 +76,17 @@ Listen(int sockfd, int backlog)
 	if(listen(sockfd, backlog) < 0) 
     {
 		perror("listen error");
-		return -1;
+		return (-1);
 	}
-	return 0;
+	return (0);
 }
 
 int
 Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen)
 {
 	int on = 1;
-	if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
+	if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) 
+    {
 		perror("bind error: setsockopt error");
 		if(close(sockfd ) < 0)
         {
@@ -98,9 +98,9 @@ Bind(int sockfd, struct sockaddr *addr, socklen_t addrlen)
 	if(bind(sockfd, addr, addrlen) < 0)
     {
 		perror("bind error");
-		return -1;
+		return (-1);
 	}
-	return 0;
+	return (0);
 }
 
 int
@@ -110,7 +110,7 @@ Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 	if((acceptfd = accept(sockfd, addr, addrlen)) < 0)
     {
 		perror("accept error");
-		return -1;
+		return (-1);
 	}
-	return acceptfd;
+	return (acceptfd);
 }

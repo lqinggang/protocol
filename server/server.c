@@ -39,7 +39,7 @@ main(void)
 	//4.listen
 	Listen(listenfd, BACKLOG);
 
-	while(1)
+    for (;;)
     {
 		printf("wait for client....\n");
 
@@ -156,13 +156,6 @@ main(void)
 				printf("waitpid error\n");
 			}
 
-			//	/* wait for child process
-			//	 * prevent zombie process
-			//	 */
-			//	if(signal(SIGCHLD, sig_chld) < 0) { 
-			//		perror("SIGCHLD error");
-			//	}
-			//do something
 		}
 	}
 	return 0;
